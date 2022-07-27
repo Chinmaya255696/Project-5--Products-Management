@@ -356,7 +356,7 @@ const getUser = async function (req, res) {
 
 }
 
-
+//---------------------------------------------------updateUserDetail---------------------------------------------//
 const updateUserDetail = async (req, res) => {
 
   try {
