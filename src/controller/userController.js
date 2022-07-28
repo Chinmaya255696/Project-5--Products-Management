@@ -472,3 +472,6 @@ const updateUserDetail = async (req, res) => {
 }
 
 module.exports = { getUser, createUser, loginUser, updateUserDetail }
+
+
+

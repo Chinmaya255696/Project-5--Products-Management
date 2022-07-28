@@ -64,7 +64,7 @@ const updateProductDetail = async function (req, res) {
         if (!updatedData) { return res.status(400).send({ status: false, message: "Put something what you want to update." }) }
 
         const { title, description, price, currencyId, currencyFormat, isFreeShipping, style, availableSizes, installments, productImage } = updatedData
-
+//-------validate titel -------
         if (title) {
 
             if (!/^\s*[a-zA-Z]{2,}\s*$/.test(title)) {
@@ -72,6 +72,7 @@ const updateProductDetail = async function (req, res) {
             }
 
         }
+        //-------finding the titel from db-------
         if (title) {
 
             const checkTitle = await productModel.findOne({ title: title });
@@ -80,10 +81,12 @@ const updateProductDetail = async function (req, res) {
                 return res.status(400).send({ status: false, message: ` Title is already used` })
             }
         }
-
-        if (!/^\s*[a-zA-Z]{2,}\s*$/.test(description)) {
-            return res.status(400).send({ status: false, msg: `Heyyy....! ${description} is not a description` });
-        }
+//------- description-------
+        if (description){
+        if (!isValidData(description)) {
+            return res.status(400).send({ status: false, msg: `Description is required` });
+        }}
+//------- Validate price-------
         if (price) {
 
             if (isNaN(Number(price))) {
@@ -93,7 +96,9 @@ const updateProductDetail = async function (req, res) {
                 return res.status(400).send({ status: false, message: `Price should be a valid number` })
             }
         }
-        if (!/^\s*[a-zA-Z]{2,}\s*$/.test(currencyId)) {
+//-------  currencyId-------
+
+        if (!isValidData(currencyId)) {
             return res.status(400).send({ status: false, message: `currencyId is required` })
         }
 
@@ -102,7 +107,8 @@ const updateProductDetail = async function (req, res) {
                 return res.status(400).send({ status: false, message: 'currencyId should be a INR' })
             }
         }
-        if (!/^\s*[a-zA-Z]{2,}\s*$/.test(currencyFormat)) {
+ //---------  currencyFormat-------       
+        if (!isValidData(currencyFormat)) {
             return res.status(400).send({ status: false, message: `currency format is required` })
         }
         if (currencyFormat) {
@@ -110,16 +116,27 @@ const updateProductDetail = async function (req, res) {
                 return res.status(400).send({ status: false, message: "Please provide currencyFormat in format ₹ only" })
             }
         }
+//---------  isFreeShipping------- 
+if (!isValidData(isFreeShipping)) {
+    return res.status(400).send({ status: false, message: `isFreeshiping is required` })
+} 
         if (isFreeShipping) {
 
             if (!((isFreeShipping === "true") || (isFreeShipping === "false"))) {
                 return res.status(400).send({ status: false, message: 'isFreeShipping should be a boolean value' })
             }
         }
-        if (!/^\s*[a-zA-Z]{2,}\s*$/.test(style)) {
-            return res.status(400).send({ status: false, msg: `Heyyy....! ${style} is not a valid string` });
+//---------  profileImage-------
+         
+        if (profileImage) {
+            if (!/([/|.|\w|\s|-])*\.(?:jpg|jpeg|png|JPG|JPEG|PNG)/.test(profileImage)) return res.status(400).send({ status: false, message: " profileImage .." })
+          }
+//---------  style-------  
+        if (!isValidData(style)) {
+            return res.status(400).send({ status: false, msg: `Heyyy....! style is required` });
         }
-        if (!/^\s*[a-zA-Z]{2,}\s*$/.test(availableSizes)) {
+//---------  availableSizes------- 
+        if (!isValidData(availableSizes)) {
             return res.status(400).send({ status: false, message: `size is required` })
         }
 
@@ -131,7 +148,8 @@ const updateProductDetail = async function (req, res) {
                 }
             })
         }
-        if (!validator.validString(installments)) {
+//---------  installments-------        
+        if (!isValidData(installments)) {
             return res.status(400).send({ status: false, message: `installment is required` })
         }
         if (installments) {
