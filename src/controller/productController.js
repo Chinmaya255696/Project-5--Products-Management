@@ -88,9 +88,9 @@ const createProduct = async (req, res) => {
         if (currencyFormat) {
             if (currencyFormat != "₹") return res.status(400).send({ status: false, message: " currencyFormatis only ₹" })
         }
-        // if (!currencyFormat) {
-        //     data.currencyFormat = "₹"
-        // }
+        if (!currencyFormat) {
+            data.currencyFormat = "₹"
+        }
 
 
         if (isFreeShipping == 0) return res.status(400).send({ status: false, message: "isFreeShipping Box can't be empty..! please add True or False" })
@@ -129,7 +129,7 @@ const createProduct = async (req, res) => {
 
             for (let i = 0; i < check.length; i++) {
                 if (!(["S", "XS", "M", "X", "L", "XXL", "XL"].includes(check[i]))) {
-                    return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid plsase enter valid Size` })
+                    return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid please enter valid Size` })
                 }
             }
             data.availableSizes = data.availableSizes.split(" ")
@@ -148,7 +148,7 @@ const createProduct = async (req, res) => {
 
 
         const saveData = await productModel.create(data)
-        res.status(201).send({ status: true, message: "Product created Successfully", data: saveData })
+        { return res.status(201).send({ status: true, message: "Product created Successfully", data: saveData })}
 
     } catch (error) {
         res.status(500).send({ status: false, message: error.message })
@@ -399,7 +399,7 @@ const updateProductDetail = async function (req, res) {
 
             for (let i = 0; i < check.length; i++) {
                 if (!(["S", "XS", "M", "X", "L", "XXL", "XL"].includes(check[i]))) {
-                    return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid plsase enter valid Size` })
+                    return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid please enter valid Size` })
                 }
             }
             updatedData.availableSizes = updatedData.availableSizes.split(" ")
