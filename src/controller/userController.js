@@ -181,7 +181,7 @@ const createUser = async function (req, res) {
     const hash = bcrypt.hashSync(password, saltRounds);
     data.password = hash;
 
-    //===== validate address ======//
+    
     //===== validate address ======//
     if (!data.address || data.address.trim().length==0) {
       return res
