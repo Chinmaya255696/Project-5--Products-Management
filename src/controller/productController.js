@@ -39,7 +39,6 @@ const isValidData = function (value) {
 };
 //////////----------------------------------------------------------------  
 
-
 //=/=/=/=/=/=/=/=/=/=/=/=/=/=/= createProduct =/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/
 const createProduct = async (req, res) => {
 
@@ -51,13 +50,14 @@ const createProduct = async (req, res) => {
 
         if (!Object.keys(data).length) return res.status(400).send({ status: false, message: "body is Required.." })
 
-
+        
+      
         if (!isValidData(title)) return res.status(400).send({ status: false, message: "title is Required.." })
 
         if (!/^(?=.*?[a-zA-Z])[,.! %?a-zA-Z\d ]+$/.test(title)) return res.status(400).send({ status: false, msg: `title is not a valid it can be aphaNumeric` });
 
 
-        let uniqueTitle = await productModel.findOne({ title: title })
+        let uniqueTitle = await productModel.findOne({ title: title})
 
         if (uniqueTitle) return res.status(400).send({ status: false, message: ` ${title} is Already Exist ` })
 
@@ -71,34 +71,32 @@ const createProduct = async (req, res) => {
 
         if (!price || price.trim().length == 0) return res.status(400).send({ status: false, message: " Price is Required.." })
 
+        if (Number(price) <= 0) return res.status(400).send({ status: false, message: " Price is not less than 0 " })
+
         if (!/^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)$/.test(price)) return res.status(400).send({ status: false, message: " Price is in this Format 200 || 200.00" })
 
-        if (currencyId == 0) return res.status(400).send({ status: false, message: "currencyId is Required.." })
+        
+      //-------  currencyId------- 
+      if (currencyId != "INR") {
+        return res.status(400).send({ status: false, message: 'currencyId should be a INR' })
+    }
+    if (!currencyId) {
+        data.currencyId = "INR"
+    }
 
-        if (currencyId) {
-
-            if (currencyId.toUpperCase() != "INR") return res.status(400).send({ status: false, message: " currencyId is only INR" })
-            data.currencyId = currencyId.toUpperCase()
-        }
-        // if (!currencyId) {
-        //     data.currencyId = "INR"
-        // }
-
-        if (currencyFormat == 0) return res.status(400).send({ status: false, message: " currencyFormat is Required.." })
-        if (currencyFormat) {
-            if (currencyFormat != "₹") return res.status(400).send({ status: false, message: " currencyFormatis only ₹" })
-        }
-        if (!currencyFormat) {
-            data.currencyFormat = "₹"
-        }
-
+    //---------  currencyFormat-------       
+    if (currencyFormat != "₹") {
+        return res.status(400).send({ status: false, message: "Please provide currencyFormat in format ₹ only" })
+    }
+    if (!currencyFormat) {
+        data.currencyFormat = "₹"
+    }
 
         if (isFreeShipping == 0) return res.status(400).send({ status: false, message: "isFreeShipping Box can't be empty..! please add True or False" })
         if (isFreeShipping) {
             if (!/(?:true|false|True|False)/.test(isFreeShipping)) return res.status(400).send({ status: false, message: `isFreeShipping can't be ${isFreeShipping} ..! please add True or False` })
             data.isFreeShipping = isFreeShipping.toLowerCase()
         }
-
 
         let fileData = files[0];
         if (!fileData) { return res.status(400).send({ msg: "Product Image Not found" }); }
@@ -120,7 +118,6 @@ const createProduct = async (req, res) => {
             if (!/^\s*[a-zA-Z ]{2,}\s*$/.test(style)) return res.status(400).send({ status: false, message: " Style is not valid " })
         }
 
-
         if (availableSizes == 0) { return res.status(400).send({ status: false, msg: "availableSizes should not be empty" }) }
 
         if (availableSizes) {
@@ -129,28 +126,29 @@ const createProduct = async (req, res) => {
 
             for (let i = 0; i < check.length; i++) {
                 if (!(["S", "XS", "M", "X", "L", "XXL", "XL"].includes(check[i]))) {
-                    return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid please enter valid Size` })
+                    return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid plsase enter valid Size` })
                 }
             }
             data.availableSizes = data.availableSizes.split(" ")
         }
 
-
         if (installments == 0) return res.status(400).send({ status: false, message: " installments is empty" })
 
         if (installments) {
-            if ((Number(installments)) > price) return res.status(400).send({ status: false, message: " installments Should be less than price" })
+            if (Number(installments) < 0) return res.status(400).send({ status: false, message: " installments is not less than 0 " })
+            if ((Number(installments)) >= Number(price)) return res.status(400).send({ status: false, message: " installments Should be less than price" })
 
             if (!(!isNaN(Number(installments)))) {
                 return res.status(400).send({ status: false, message: "Plz, enter valid format of installments it should be a number" })
             }
         }
 
-
         const saveData = await productModel.create(data)
-        { return res.status(201).send({ status: true, message: "Product created Successfully", data: saveData })}
+        res.status(201).send({ status: true, message: "Product created Successfully", data: saveData })
 
     } catch (error) {
+        if (error.message = "E11000 duplicate key error collection") return res.status(400).send({ status: false, message: "Title Already exist." })
+
         res.status(500).send({ status: false, message: error.message })
     }
 }
@@ -161,32 +159,33 @@ const getproductbyfilter = async function (req, res) {
 
         let requestData = req.query
 
-        const { size, name, priceGreaterThan, priceLessThan } = requestData
+        const { size, name, priceGreaterThan, priceLessThan,pricesort } = requestData
 
         console.log(requestData)
         //<-----------------------taking filter for searching------------------>//
         const filter = {}
-        if (size.length == 1) {
-            if (!["S", "XS", "M", "X", "L", "XXL", "XL"].includes(size.toUpperCase())) return res.status(400).send({ status: false, message: "enter valid size" })
+        if (size) {
+            let sizeAll = JSON.parse(size)
+            let sizes = sizeAll.map(x => x.toUpperCase());
+            if (sizes) {
 
-            filter.availableSizes = size.toUpperCase()
-        }
+                for (let i = 0; i < sizes.length; i++) {
+                    if (!(["S", "XS", "M", "X", "L", "XXL", "XL"].includes(sizes[i]))) {
+                        return res.status(400).send({ status: false, message: `${sizes[i]} is NOT valid Size, Available Sizes must be among ${["S", "XS", "M", "X", "L", "XXL", "XL"]}` })
+                    }
+                }
 
-        if (size.length > 1) {
-            let sizes = JSON.parse(size)
-            console.log(sizes);
-
-            for (let i = 0; i < sizes.length; i++) {
-                if (!(["S", "XS", "M", "X", "L", "XXL", "XL"].includes(sizes[i].toUpperCase()))) {
-                    return res.status(400).send({ status: false, message: `Available Sizes must be among ${["S", "XS", "M", "X", "L", "XXL", "XL"]}` })
+                if (sizes.length > 0) {
+                    let arrSize = [...sizes]
+                    filter.availableSizes = { $in: arrSize }
                 }
             }
-           
         }
-
         if (name) {
             if (!/^\s*[a-zA-Z ]{2,}\s*$/.test(name)) return res.status(400).send({ status: false, message: "enter valid name" })
             filter.title = name
+            filter.title = { $regex: ".*" + name.toLowerCase() + ".*" }
+
         }
 
         if (priceGreaterThan) {
@@ -200,8 +199,11 @@ const getproductbyfilter = async function (req, res) {
         if (priceGreaterThan && priceLessThan) {
             filter.price = { $gte: priceGreaterThan, $lte: priceLessThan }
         }
+        if(!(pricesort ==1 || pricesort ==-1)){
+            return res.status(400).send({ status: false, message: "pricesort should be 1 and -1" })
+        }
         console.log(filter)
-        let allproduct = await productModel.find({ $and: [{ isDeleted: false }, filter] }).sort({ price: 1 })//.sort({ price:-1 })
+        let allproduct = await productModel.find({ $and: [{ isDeleted: false }, filter] }).sort({ price: pricesort })//.sort({ price:-1 })
 
         if (allproduct.length == 0)
             return res.status(404).send({ status: false, message: "product not found" })
@@ -270,24 +272,7 @@ const deleteProductById = async function (req, res) {
     }
 }
 
-// const isValidRequestBody = function (requestBody) {
-//     if (!requestBody) return false;
-//     if (Object.keys(requestBody).length == 0) return false;
-//     return true;
-// };
-
-// const isValidData = function (value) {
-//     if (typeof value === "undefined" || value === null) return false;
-//     if (typeof value === "string" && value.trim().length == 0) return false;
-
-//     return true;
-// };
-// isvalidString = function (value) {
-//     if (typeof value === "string" && value.trim().length == 0) return false;
-//     return true;
-// };
-
-///^(?=.*?[a-zA-Z])[. %?a-zA-Z\d ]+$/ alpa-numeric regex
+//----------------------------------------update product-----------------------------------------------------------------------//
 
 const updateProductDetail = async function (req, res) {
 
@@ -399,7 +384,7 @@ const updateProductDetail = async function (req, res) {
 
             for (let i = 0; i < check.length; i++) {
                 if (!(["S", "XS", "M", "X", "L", "XXL", "XL"].includes(check[i]))) {
-                    return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid please enter valid Size` })
+                    return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid plsase enter valid Size` })
                 }
             }
             updatedData.availableSizes = updatedData.availableSizes.split(" ")
