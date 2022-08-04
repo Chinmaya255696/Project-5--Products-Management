@@ -272,7 +272,7 @@ const deleteProductById = async function (req, res) {
     }
 }
 
-//----------------------------------------update product-----------------------------------------------------------------------//
+//=/=/=/=/=/=/=/=/=/=/=/=/=/=/= updateProductDetail =/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/
 
 const updateProductDetail = async function (req, res) {
 
@@ -283,27 +283,26 @@ const updateProductDetail = async function (req, res) {
 
         // aws upload
 
-        if (files && files.length > 0) {
-            let uploadedFileURL = await uploadFile(files[0]);
-            data.productImage = uploadedFileURL;
-        }
+
 
         if (!mongoose.isValidObjectId(productId)) return res.status(400).send({ status: false, message: 'productId is not valid' })
 
         const cheakProduct = await productModel.findOne({ _id: productId, isDeleted: false })
+
+
         if (!cheakProduct) { return res.status(404).send({ status: false, message: "product not found" }) }
 
         if (!updatedData) { return res.status(400).send({ status: false, message: "Put something what you want to update." }) }
 
-        let { title, description, price, currencyId, currencyFormat, isFreeShipping, style, availableSizes, installments, productImage } = updatedData
+        let { title, description, price, currencyId, currencyFormat, isFreeShipping, style, availableSizes, installments,productImage } = updatedData
         //-------validate titel -------
         if (title == 0) return res.status(400).send({ status: false, msg: "title should not be empty" })
 
         if (title) {
 
-           
-            if (!/^\s*[a-zA-Z0-9 ]{2,}\s*$/.test(title)) {
-                return res.status(400).send({ status: false, msg: `Heyyy....! ${title} is not a valid title` });
+
+            if (!/^(?=.*?[a-zA-Z])[,.! %?a-zA-Z\d ]+$/.test(title)) {
+                return res.status(400).send({ status: false, msg: `Heyyy....! ${title} is not a valid title It Should Alpha || Alphanumeric` });
             }
 
         }
@@ -337,25 +336,26 @@ const updateProductDetail = async function (req, res) {
                 return res.status(400).send({ status: false, message: `Price should be a valid number` })
             }
         }
-        //-------  currencyId------- 
+
+        //-------  currencyId------
         if (currencyId) {
-           
             if (currencyId != "INR") {
                 return res.status(400).send({ status: false, message: 'currencyId should be a INR' })
             }
         }
-        //---------  currencyFormat-------       
 
+
+        //---------  currencyFormat-------   
         if (currencyFormat) {
-           
             if (currencyFormat != "₹") {
                 return res.status(400).send({ status: false, message: "Please provide currencyFormat in format ₹ only" })
             }
         }
+
+
         //---------  isFreeShipping------- 
         if (isFreeShipping == 0) return res.status(400).send({ status: false, msg: "isFreeShipping should not be empty" })
         if (isFreeShipping) {
-        
             if (!((isFreeShipping === "true") || (isFreeShipping === "false"))) {
                 return res.status(400).send({ status: false, message: 'isFreeShipping should be a boolean value' })
             }
@@ -363,9 +363,15 @@ const updateProductDetail = async function (req, res) {
         //---------  validate ProductImage-------
 
 
-        if (productImage) {
-           
-            if (!/([/|.|\w|\s|-])*\.(?:jpg|jpeg|png|JPG|JPEG|PNG)/.test(productImage)) return res.status(400).send({ status: false, message: " productImage is not in right format .." })
+        let fileData = files[0];
+        if (fileData) {
+//console.log(fileData)
+            if (!/([/|.|\w|\s|-])*\.(?:jpg|jpeg|png|JPG|JPEG|PNG)/.test(fileData.originalname)) return res.status(400).send({ status: false, message: " productImage is not in right format .." })
+
+            if (files && files.length > 0) {
+                let uploadedFileURL = await uploadFile(files[0]);
+                updatedData.productImage = uploadedFileURL;
+            }
         }
 
         //---------  style-------  
@@ -376,41 +382,53 @@ const updateProductDetail = async function (req, res) {
             }
         }
         // //---------  availableSizes------- 
-      
+
         if (availableSizes == 0) { return res.status(400).send({ status: false, msg: "availableSizes should not be empty" }) }
         if (availableSizes) {
-           updatedData.availableSizes = availableSizes.toUpperCase()
+            updatedData.availableSizes = availableSizes.toUpperCase()
             let check = updatedData.availableSizes.split(" ")
-
+            console.log(cheakProduct.availableSizes);
             for (let i = 0; i < check.length; i++) {
+
+                // if (cheakProduct.availableSizes.includes(check[i])) { return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is is already in sizes` }) }
+
                 if (!(["S", "XS", "M", "X", "L", "XXL", "XL"].includes(check[i]))) {
-                    return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid plsase enter valid Size` })
+                    {
+                        return res.status(400).send({ status: false, message: `the Size which you given ${check[i]} is not valid plsase enter valid Size` })
+                    }
+
                 }
             }
+
             updatedData.availableSizes = updatedData.availableSizes.split(" ")
-        
-
-
+            //add the code 
         }
         //---------  installments-------        
         if (installments == 0) return res.status(400).send({ status: false, msg: "installments should not be empty" })
         if (installments) {
-         
-
             if (!Number.isInteger(Number(installments))) {
                 return res.status(400).send({ status: false, message: `installments should be a valid number` })
+            }
+            if (price) {
+                if (installments > price) {
+                    return res.status(400).send({ status: false, message: `installments should not be greater then the price` })
+                }
+            } else {
+                if (installments > cheakProduct.price) {
+                    return res.status(400).send({ status: false, message: `installments should not be greater then the price` })
+                }
             }
         }
 
         const updatedProduct = await productModel.findOneAndUpdate({ _id: productId }, updatedData, { new: true })
-             res.status(200).send({ status: true, message: 'Product details updated successfully.', data: updatedProduct }); 
-            
+        res.status(200).send({ status: true, message: 'Product details updated successfully.', data: updatedProduct });
 
 
-   } 
-      catch (error) {
+
+    }
+    catch (error) {
         return res.status(500).send({ status: false, message: error.message })
-       }
+    }
 }
 
 module.exports = { getproductbyfilter, createProduct, getProductById, deleteProductById, updateProductDetail }

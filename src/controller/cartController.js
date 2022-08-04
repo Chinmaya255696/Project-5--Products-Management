@@ -14,7 +14,7 @@ const createCart = async (req, res) => {
         let data = req.body
         const { productId } = data
 
-        if (!productId) return res.status(400).send({ status: false, message: "productId is Required.." })
+        if (!productId|| productId.trim().length == 0) return res.status(400).send({ status: false, message: "productId is Required.." })
 
         if (userId == 0) return res.status(400).send({ status: false, message: "userId is empty.." })
         if (!mongoose.isValidObjectId(userId)) return res.status(400).send({ status: false, message: "userId is not Valid ObjectId.." })
