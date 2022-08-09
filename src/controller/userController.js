@@ -15,12 +15,12 @@ aws.config.update({
 let uploadFile = async (file) => {
   return new Promise(function (resolve, reject) {
     let s3 = new aws.S3({ apiVersion: "2006-03-01" }); // we will be using the s3 service of aws
-
+// This line (let s3 = new aws.S3({ apiVersion: "2006-03-01" })) is standardise by this Aws  by this line it will give access to the S# services.
     var uploadParams = {
-      ACL: "public-read",
-      Bucket: "classroom-training-bucket", //HERE
-      Key: "abc/" + file.originalname, //HERE
-      Body: file.buffer,
+      ACL: "public-read", //  ACL(Access control) : Public read mens who ever has link to this file he/she can access this file means view and downlod this file.
+      Bucket: "classroom-training-bucket", //Bucket name is folder name where you upload this file.
+      Key: "abc/" + file.originalname, //"abc"/ here is the sub folder and "+ file.originalname"  is our file which will be upload in the abc sub folder with the original name.
+      Body: file.buffer,// we can not send our filesdirectly to the body we have to send it in buffre form.
     };
 
     s3.upload(uploadParams, function (err, data) {
